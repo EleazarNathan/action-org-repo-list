@@ -61,7 +61,7 @@ function run() {
             const containsArchived = containsArchivedInput === 'true';
             const excludeRepoNamesInput = core.getInput('exclude-repo-names') || '.github,.github-workflow';
             const excludeRepoNames = excludeRepoNamesInput.split(',');
-            const wrapWithDetailsInput = core.getInput('wrap-with-details') || 'false';
+            const wrapWithDetailsInput = core.getInput('wrap-with-details') || 'true';
             const wrapWithDetails = wrapWithDetailsInput === 'true';
             const output = yield (0, make_1.default)(org, githubToken, containsArchived, excludeRepoNames, wrapWithDetails);
             core.setOutput('table', output);
@@ -100,18 +100,20 @@ function makeTable(org, githubToken, containsArchived, excludeRepoNames, wrapWit
             org
         });
         let repoInfo = allRepo.map(repo => {
-            var _a, _b, _c;
+            var _a, _b, _c, _d, _e;
             let desc = (_a = repo.description) !== null && _a !== void 0 ? _a : '<no description>';
             if (desc.includes('|')) {
                 desc = desc.replace(/\|/g, '\\|');
             }
+            const topics = (_c = (_b = repo.topics) === null || _b === void 0 ? void 0 : _b.join(', ')) !== null && _c !== void 0 ? _c : '<no topics>';
             return {
                 name: repo.name,
-                stars: (_b = repo.stargazers_count) !== null && _b !== void 0 ? _b : 0,
+                stars: (_d = repo.stargazers_count) !== null && _d !== void 0 ? _d : 0,
                 url: repo.html_url,
                 description: desc,
                 latestCommit: repo.updated_at,
-                archived: (repo.archived = (_c = repo.archived) !== null && _c !== void 0 ? _c : false)
+                archived: (repo.archived = (_e = repo.archived) !== null && _e !== void 0 ? _e : false),
+                topics
             };
         });
         // sort by stars
@@ -122,9 +124,9 @@ function makeTable(org, githubToken, containsArchived, excludeRepoNames, wrapWit
             .filter(repo => containsArchived || !repo.archived)
             .filter(repo => !excludeRepoNames.includes(repo.name));
         // make a markdown table
-        let table = `| Name | Description | Stars | Latest Commit |\n| ---- | --- | ----------- | ------------- |\n`;
+        let table = `| Name | Description | Stars | Latest Commit | Topics |\n| ---- | --- | ----------- | ------------- | ------ |\n`;
         for (const repo of repoInfo) {
-            table += `| [${repo.name}](${repo.url}) | ${repo.description} | ${repo.stars} | ${repo.latestCommit} |\n`;
+            table += `| [${repo.name}](${repo.url}) | ${repo.description} | ${repo.stars} | ${repo.latestCommit} | ${repo.topics} |\n`;
         }
         if (wrapWithDetails) {
             table = `<details><summary>📖 Repositories</summary>
